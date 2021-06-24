@@ -7,6 +7,34 @@ import yaml
 import pickle
 from glob import glob
 
+
+def gstreamer_pipeline(
+    capture_width=1280,
+    capture_height=720,
+    display_width=1280,
+    display_height=720,
+    framerate=60,
+    flip_method=0,
+):
+    return (
+        "nvarguscamerasrc ! "
+        "video/x-raw(memory:NVMM), "
+        "width=(int)%d, height=(int)%d, "
+        "format=(string)NV12, framerate=(fraction)%d/1 ! "
+        "nvvidconv flip-method=%d ! "
+        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "videoconvert ! "
+        "video/x-raw, format=(string)BGR ! appsink"
+        % (
+            capture_width,
+            capture_height,
+            framerate,
+            flip_method,
+            display_width,
+            display_height,
+        )
+    )
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calibrate camera using a video of a chessboard or a sequence of images.')
     parser.add_argument('input',nargs="?", help='input video file or glob mask')
@@ -22,7 +50,7 @@ if __name__ == '__main__':
 # parser.add_argument('--figure', help='saved visualization name', default=None)
     args = parser.parse_args()
 
-    source = cv2.VideoCapture(0)
+    source = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
     # square_size = float(args.get('--square_size', 1.0))
     
     pattern_size = (9, 6)
